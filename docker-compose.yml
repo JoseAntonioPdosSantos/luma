@@ -72,7 +72,7 @@ services:
       # Time zone that "after BACKUP_HOUR" refers to.
       TZ: ${BACKUP_TZ:-America/Campo_Grande}
       BACKUP_HOUR: ${BACKUP_HOUR:-3}
-      BACKUP_KEEP: ${BACKUP_KEEP:-30}
+      BACKUP_KEEP: ${BACKUP_KEEP:-1}
     volumes:
       - ./scripts/backup:/scripts:ro
       - ./backups:/backups

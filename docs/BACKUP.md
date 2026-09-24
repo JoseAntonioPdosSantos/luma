@@ -16,7 +16,10 @@ A `backup` service in `docker-compose.yml` runs `scripts/backup/backup-scheduler
 - Files are written to **`./backups/`** as
   `flashcard-YYYY-MM-DD-HHMMSS.archive.gz` (a few MB each) and belong to
   your user, so you can copy or delete them normally.
-- The **last 30** are kept (`BACKUP_KEEP`); older ones are removed.
+- Only the **most recent one** is kept (`BACKUP_KEEP`, default `1`):
+  once a new backup is verified, every older one is removed. Set
+  `BACKUP_KEEP` in `.env` to keep more than one if you want a longer
+  history instead.
 - A backup is verified (gzip integrity plus a dry-run restore) *before* it
   gets its final name, so a crashed or truncated dump never looks like a
   valid backup. If a backup fails, the scheduler retries an hour later and
@@ -33,7 +36,7 @@ Set in `.env` (see `.env.example`); all are optional.
 |----------------|-------------------------|---------|
 | `BACKUP_TZ`    | `America/Campo_Grande`  | Time zone for `BACKUP_HOUR` |
 | `BACKUP_HOUR`  | `3`                     | Hour of day (0-23) after which the day's backup is due |
-| `BACKUP_KEEP`  | `30`                    | How many backups to keep |
+| `BACKUP_KEEP`  | `1`                     | How many backups to keep |
 | `BACKUP_UID` / `BACKUP_GID` | `1000` / `1000` | Owner of the files in `./backups` (`id -u`, `id -g`) |
 
 ## Everyday commands
