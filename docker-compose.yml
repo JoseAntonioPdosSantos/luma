@@ -1,0 +1,84 @@
+# Pins the Compose project name to "luma" regardless of the folder's name, so
+# container and volume names (e.g. the "luma_mongo-data" volume holding all
+# study data) stay stable even if the project directory is ever renamed again.
+name: luma
+
+services:
+  mongo:
+    restart: unless-stopped
+    image: mongo:7
+    # MongoDB (WiredTiger) keeps many files open. The container's default soft
+    # limit of 1024 is far below what MongoDB recommends, and reaching it
+    # makes mongod abort ("Too many open files").
+    ulimits:
+      nofile:
+        soft: 64000
+        hard: 64000
+    ports:
+      # Host port 27018 to avoid clashing with another MongoDB already
+      # running on the default 27017 on developer machines; other
+      # containers on this compose network still reach it at mongo:27017.
+      - "27018:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    restart: unless-stopped
+    build:
+      context: ./backend
+    ports:
+      - "8080:8080"
+    environment:
+      APP_ENV: development
+      HTTP_PORT: 8080
+      MONGODB_URI: mongodb://mongo:27017
+      MONGODB_DATABASE: flashcard
+      SESSION_SECRET: ${SESSION_SECRET:-insecure-development-secret-do-not-use-in-production}
+      COOKIE_SECURE: "false"
+      MAX_AUDIO_SIZE_BYTES: "10485760"
+      # Comma-separated list so the app also works when opened from another
+      # device on the LAN via the host's IP (adjust if your IP differs).
+      CORS_ALLOWED_ORIGINS: http://localhost:5173,http://192.168.0.4:5173,http://192.168.0.5:5173
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+  frontend:
+    restart: unless-stopped
+    build:
+      context: ./frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+  # Daily backup of the database into ./backups (see docs/BACKUP.md). Runs as
+  # the host user so the files it writes belong to you, not to root.
+  backup:
+    restart: unless-stopped
+    image: mongo:7
+    user: "${BACKUP_UID:-1000}:${BACKUP_GID:-1000}"
+    entrypoint: ["sh", "/scripts/backup-scheduler.sh"]
+    environment:
+      MONGODB_URI: mongodb://mongo:27017
+      MONGODB_DATABASE: flashcard
+      # mongosh (used by restore.sh) needs a writable home for a non-root user.
+      HOME: /tmp
+      # Time zone that "after BACKUP_HOUR" refers to.
+      TZ: ${BACKUP_TZ:-America/Campo_Grande}
+      BACKUP_HOUR: ${BACKUP_HOUR:-3}
+      BACKUP_KEEP: ${BACKUP_KEEP:-30}
+    volumes:
+      - ./scripts/backup:/scripts:ro
+      - ./backups:/backups
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+volumes:
+  mongo-data:

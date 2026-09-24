@@ -1,0 +1,25 @@
+# Go
+/backend/api
+*.test
+
+# Node / frontend
+/frontend/node_modules
+/frontend/dist
+/frontend/tsconfig.tsbuildinfo
+
+# Environment
+.env
+.env.local
+
+# OS / editor
+.DS_Store
+*~
+
+# Database backups: they contain users' e-mails and study data.
+/backups/
+
+# Reference material only, not the app's own assets: not ours to
+# redistribute (third-party UI mockups) or not meant for the repo.
+Design.png
+design [0-9]*.jpeg
+google_login_agent.md
