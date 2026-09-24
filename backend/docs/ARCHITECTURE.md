@@ -11,21 +11,26 @@ cmd/api/main.go          wires everything together; the only place that
 
 internal/
 ├── domain/               entities + pure business rules, zero I/O
-│   ├── user/              email validation/normalization
+│   ├── user/              email validation/normalization, UI language
 │   ├── deck/               name/description validation
+│   ├── deckgroup/          named folder a deck can be filed under
 │   ├── flashcard/          question/answer/audio validation
 │   ├── review/             ReviewEvent (immutable review history)
+│   ├── studyprofile/       named study configuration (rules + daily goal)
 │   └── study/              CardState, Rating, Scheduler (spaced repetition)
 │
 ├── application/          use cases; orchestrate domain + ports, enforce
 │   │                     ownership, never import MongoDB or net/http
-│   ├── userservice/        email-only access flow
+│   ├── userservice/        email-only access flow, language preference
 │   ├── deckservice/        deck CRUD + card-count aggregation
+│   ├── deckgroupservice/   deck-group CRUD + filing a deck under one
 │   ├── flashcardservice/   flashcard CRUD + audio upload/playback/delete
+│   ├── profileservice/     study-configuration CRUD + which one is active
 │   └── studyservice/       due-card selection + review recording
 │
 ├── ports/                interfaces the application layer depends on
-│   ├── repositories/       User/Deck/Flashcard/ReviewEvent persistence
+│   ├── repositories/       User/Deck/DeckGroup/Flashcard/StudyProfile/
+│   │                       ReviewEvent persistence
 │   ├── audiostore/         audio binary storage (Save/Open/Delete)
 │   ├── session/            session token issue/verify
 │   └── clock/              injectable time, for deterministic tests
@@ -92,13 +97,16 @@ BSON; neither layer makes business decisions.
 
 ## Error handling
 
-Application services return `*apperror.Error` (a stable code + safe
-message) for anything the caller should see, and wrap unexpected errors
-from a port (e.g. a MongoDB failure) with `apperror.Internal(err)`, which
-keeps the original error for server-side logging but never leaks it to
-the client. `internal/adapters/http/errors.go`'s `writeError` is the only
+Application services return `*apperror.Error` (a stable code, a stable
+machine-readable `Key` for translation, and an English fallback message)
+for anything the caller should see, and wrap unexpected errors from a
+port (e.g. a MongoDB failure) with `apperror.Internal(err)`, which keeps
+the original error for server-side logging but never leaks it to the
+client. `internal/adapters/http/errors.go`'s `writeError` is the only
 place that translates an `*apperror.Error` into an HTTP status and JSON
-body — see `docs/API.md` for the code table.
+body — see `docs/API.md` for the code table and the frontend's
+`src/i18n/useApiErrorMessage.ts` for how `Key` becomes a localized
+message.
 
 ## Adding a new feature
 
@@ -119,6 +127,6 @@ A new read/write operation typically touches:
    `internal/adapters/http/*_test.go`'s `mongoTestRouter` helper) confirms
    the wiring end-to-end.
 
-See `docs/API.md` for the resulting HTTP contract, and the root
-`README.md`'s "Assumptions and decisions worth knowing about" section for
-places this project deliberately diverged from the product spec.
+See `docs/API.md` for the resulting HTTP contract, and
+[`docs/DECISIONS.md`](../../docs/DECISIONS.md) for places this project
+deliberately diverged from the product spec.
