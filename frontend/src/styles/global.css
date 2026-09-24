@@ -1,0 +1,1358 @@
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* Lumia design system: a calm, neutral surface is the dominant visual
+     language (roughly 80-90% of the interface), with the brand blue used
+     sparingly for actions/selection, lavender and yellow as small accents,
+     and semantic colors (success/warning/error) reserved for state, not
+     decoration. Every color used anywhere in this file should trace back
+     to one of these tokens rather than a one-off hex value. */
+  --color-bg: #faf8f6;
+  --color-surface: #ffffff;
+  --color-text: #202638;
+  --color-muted: #687080;
+  --color-border: #e5e7eb;
+
+  --color-primary: #5278d9;
+  --color-primary-dark: #4167c8;
+  --color-primary-soft: #eaf0ff;
+  --color-primary-text: #ffffff;
+
+  --color-lavender-soft: #f0ecff;
+  --color-lavender-fg: #7a6bc2;
+
+  --color-accent: #f5c45b;
+
+  --color-success: #3fa77a;
+  --color-success-soft: #e8f6ef;
+  --color-warning: #d99a24;
+  --color-warning-soft: #fff4d6;
+  --color-error: #d95c67;
+  --color-error-soft: #fdecee;
+  /* Kept as an alias: most of this file predates the Lumia system and
+     still refers to the "error background" by this name. */
+  --color-error-bg: var(--color-error-soft);
+
+  /* Fixed (not redefined for dark mode): success/warning/error/accent stay
+     similarly light/mid-toned in both themes (see the dark block below),
+     so a solid fill of one of them always needs dark text, unlike
+     --color-text which flips with the theme. */
+  --color-text-on-semantic: #1b2338;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Same calm, muted relationships as light mode, just inverted — not a
+       separate palette, so both themes feel like the same product. */
+    --color-bg: #1c2033;
+    --color-surface: #262b40;
+    --color-text: #f2f3f7;
+    --color-muted: #a7aec4;
+    --color-border: #3a4160;
+
+    --color-primary: #7b9cf6;
+    --color-primary-dark: #5278d9;
+    --color-primary-soft: #232b47;
+    --color-primary-text: #0b1220;
+
+    --color-lavender-soft: #2a2740;
+    --color-lavender-fg: #b6a8f0;
+
+    --color-accent: #f5c45b;
+
+    --color-success: #4fbe8d;
+    --color-success-soft: #16342a;
+    --color-warning: #e3ac4a;
+    --color-warning-soft: #3a2e12;
+    --color-error: #e9808a;
+    --color-error-soft: #3a2024;
+  }
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.app-shell {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 2rem 1rem 4rem;
+}
+
+.hint {
+  color: var(--color-muted);
+  font-size: 0.9rem;
+}
+
+.loading,
+.empty-state {
+  color: var(--color-muted);
+  padding: 1rem 0;
+}
+
+.error {
+  color: var(--color-error);
+  background: var(--color-error-bg);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 1rem;
+  color: var(--color-muted);
+  text-decoration: none;
+}
+
+.dashboard-header,
+.dashboard-toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+/* Unlike .dashboard-toolbar (title + button, kept apart), the header only
+   ever holds one block (logo + email), which this centers as a group. */
+.dashboard-header {
+  justify-content: center;
+}
+
+.dashboard-header-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.button-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.form label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.form input,
+.form textarea {
+  font: inherit;
+  padding: 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.form textarea {
+  min-height: 4rem;
+  resize: vertical;
+}
+
+button {
+  font: inherit;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: none;
+  background: var(--color-primary);
+  color: var(--color-primary-text);
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Every button variant sets its own background further down; this only
+   ever reaches a plain primary button (the default look), giving it the
+   Lumia hover token without needing to touch the variants individually. */
+button:hover:not(:disabled):not(.secondary):not(.danger):not(.link-button):not(.rating-again):not(.rating-hard):not(.rating-good):not(.rating-easy):not(.action-edit):not(.action-archive):not(.action-restore):not(.hint-toggle):not(.restore-defaults) {
+  background: var(--color-primary-dark);
+}
+
+/* A calm, branded keyboard-focus ring on every button, replacing the
+   browser's own (often harsh) default outline — same idea as
+   .profile-select:focus. */
+button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Buttons have no outline: a secondary button is a softly tinted pill, in
+   the Lumia primary tone rather than a generic gray, so it still carries
+   the brand even though it is not the primary call to action. */
+button.secondary {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.deck-list,
+.flashcard-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.deck-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.deck-card-link {
+  color: inherit;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.deck-badge {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Callers set both background and color inline (see badgeColorFor /
+     groupBadgeColors): color denotes what the badge represents (a
+     collection vs. a group), not which specific one it is. This is a
+     fallback in case one doesn't. */
+  color: var(--color-primary);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.deck-card-body {
+  min-width: 0;
+}
+
+.deck-card-body p {
+  margin: 0.2rem 0;
+}
+
+/* Collection status: a small, subtly tinted pill next to the card count,
+   instead of coloring the whole card — see the design system's "Collection
+   Status" guidance. */
+.deck-status-pill {
+  display: inline-block;
+  margin-left: 0.4em;
+  padding: 0.05em 0.5em;
+  border-radius: 999px;
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+
+.deck-status-pill--due {
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+}
+
+.deck-status-pill--done {
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
+
+.flashcard-row {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.flashcard-row > div:first-child {
+  min-width: 0;
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+
+/* Fixed-size action buttons: they must never shrink or re-wrap when the
+   card text length changes. */
+.flashcard-row .button-row {
+  flex-shrink: 0;
+  flex-wrap: nowrap;
+}
+
+.flashcard-row .button-row a {
+  display: flex;
+  /* As a flex container the link would pass its underline down to the
+     button's text ("Editar"); the button is the visible control here. */
+  text-decoration: none;
+}
+
+.flashcard-row .button-row button {
+  white-space: nowrap;
+}
+
+.study-shell {
+  outline: none;
+}
+
+.study-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 2rem 1.5rem;
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  text-align: center;
+}
+
+.study-question {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.study-answer {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin: 0;
+}
+
+.study-example {
+  font-size: 0.95rem;
+}
+
+.study-audio {
+  width: 100%;
+  max-width: 320px;
+}
+
+.rating-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.rating-prompt {
+  margin: 0;
+}
+
+/* One row of colored buttons, from hardest (red) to easiest (dark green). */
+.rating-buttons {
+  flex-wrap: nowrap;
+}
+
+button.rating-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 48px;
+  padding: 0.4rem 0.25rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.15;
+  border: none;
+}
+
+/* Semantic colors, from hardest to easiest, rather than a traffic-light
+   red/orange/green (see design system: "semantic colors only when
+   necessary"/"do not feel like a gaming app"). "Easy" reuses the brand
+   primary rather than a fourth semantic color, since choosing it is the
+   ideal outcome of a review.
+
+   Text color is picked per background for accessible contrast: the Lumia
+   error/warning/success tones are soft enough that white text falls short
+   of it, while --color-text-on-semantic (fixed dark, not theme-reactive —
+   these tones don't invert with the theme) comfortably clears it; the
+   primary blue is the opposite (its own white text, used on every other
+   primary button in the app, already reads better than dark text would
+   here). */
+button.rating-again { background: var(--color-error); color: var(--color-text-on-semantic); }
+button.rating-hard { background: var(--color-warning); color: var(--color-text-on-semantic); }
+button.rating-good { background: var(--color-success); color: var(--color-text-on-semantic); }
+button.rating-easy { background: var(--color-primary); color: var(--color-primary-text); }
+
+.audio-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.audio-section label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.audio-section audio {
+  max-width: 320px;
+}
+
+.stats-mastery {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin: 1.5rem 0;
+}
+
+.stats-ring-track {
+  stroke: var(--color-border);
+}
+
+.stats-ring-progress {
+  stroke: var(--color-primary);
+  transition: stroke-dashoffset 0.4s ease;
+}
+
+.stats-ring-percent {
+  font-size: 1.5rem;
+  font-weight: 700;
+  fill: var(--color-text);
+}
+
+.stats-ring-label {
+  font-size: 0.7rem;
+  fill: var(--color-muted);
+}
+
+.stats-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.stats-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.stats-stat-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  min-width: 2ch;
+}
+
+.stats-stat-label {
+  color: var(--color-muted);
+  font-size: 0.9rem;
+}
+
+.stats-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  height: 140px;
+  padding: 1rem 0;
+}
+
+.stats-bar-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1;
+  height: 100%;
+}
+
+.stats-bar-track {
+  flex: 1;
+  width: 100%;
+  max-width: 28px;
+  display: flex;
+  align-items: flex-end;
+  background: var(--color-border);
+  border-radius: 4px;
+}
+
+.stats-bar-fill {
+  width: 100%;
+  min-height: 2px;
+  background: var(--color-primary);
+  border-radius: 4px 4px 0 0;
+}
+
+.stats-bar-label {
+  font-size: 0.7rem;
+  color: var(--color-muted);
+}
+
+.session-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.5rem;
+  padding: 1.5rem 0;
+}
+
+.session-summary-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--color-success-soft);
+  color: var(--color-success);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.session-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+  width: 100%;
+  margin: 1rem 0;
+}
+
+/* Two tiles (goal / studied today) instead of the four of a session. */
+.session-stats.session-stats-two {
+  grid-template-columns: repeat(2, 1fr);
+  max-width: 360px;
+}
+
+.session-stats.session-stats-three {
+  grid-template-columns: repeat(3, 1fr);
+  max-width: 480px;
+}
+
+.session-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 0.75rem 0.25rem;
+}
+
+.session-stat-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.session-stat-label {
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+
+button.danger {
+  background: var(--color-error);
+  /* Not var(--color-text): the Lumia error tone is similarly light/mid in
+     both themes (see --color-text-on-semantic's doc comment), so it always
+     needs dark text, not text that flips with the theme. */
+  color: var(--color-text-on-semantic);
+}
+
+button.link-button {
+  background: transparent;
+  border: none;
+  color: var(--color-muted);
+  text-decoration: underline;
+  padding: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.study-archive {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+
+.study-archive-confirm {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* Deck page actions: study is the primary call to action, stats is
+   secondary, and edit/archive are small and tucked underneath. */
+.deck-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.deck-header h1 {
+  margin: 0.5rem 0 0;
+}
+
+.deck-header p {
+  margin: 0;
+}
+
+.deck-badge-large {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  font-size: 1.4rem;
+}
+
+.deck-mastery {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.deck-mastery p {
+  margin: 0.4rem 0 0;
+}
+
+.deck-mastery-track {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--color-border);
+  overflow: hidden;
+}
+
+.deck-mastery-fill {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+.deck-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.deck-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 0.75rem 0.25rem;
+}
+
+.deck-tile-label {
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+
+.deck-tile-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+button.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  text-align: left;
+}
+
+.settings-chevron {
+  display: inline-flex;
+  color: var(--color-muted);
+  transition: transform 0.2s ease;
+}
+
+.settings-chevron.open {
+  transform: rotate(90deg);
+}
+
+.deck-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.deck-actions a {
+  display: block;
+}
+
+.deck-actions a button {
+  width: 100%;
+}
+
+button.primary-large {
+  font-size: 1.15rem;
+  font-weight: 700;
+  padding: 1rem 1.5rem;
+  min-height: 56px;
+}
+
+.deck-actions-minor {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.deck-actions-minor button {
+  flex: 1;
+  font-size: 0.85rem;
+  padding: 0.4rem 0.75rem;
+}
+
+/* Edit (blue) and archive (red) actions: colored text on a tinted pill (no
+   outline), so they read as secondary next to the primary CTA. */
+button.action-edit,
+button.action-archive {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+
+button.action-edit {
+  color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 14%, transparent);
+}
+
+button.action-archive {
+  color: var(--color-error);
+  background: color-mix(in srgb, var(--color-error) 14%, transparent);
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  .app-shell {
+    padding: 1rem 0.75rem 3rem;
+  }
+
+  button {
+    min-height: 44px;
+  }
+
+  .dashboard-header,
+  .dashboard-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dashboard-toolbar a,
+  .dashboard-toolbar button {
+    width: 100%;
+  }
+
+  .flashcard-row {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .flashcard-row .button-row {
+    width: 100%;
+  }
+
+  .flashcard-row .button-row > * {
+    flex: 1 1 0;
+  }
+
+  .flashcard-row .button-row button {
+    width: 100%;
+  }
+
+  .study-card {
+    padding: 1.25rem 1rem;
+  }
+
+  .study-question {
+    font-size: 1.2rem;
+  }
+
+  .study-answer {
+    font-size: 1.35rem;
+  }
+
+  .study-card > button {
+    width: 100%;
+  }
+
+  .study-audio,
+  .audio-section audio {
+    max-width: 100%;
+  }
+
+  .session-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .session-summary .button-row {
+    width: 100%;
+  }
+
+  .session-summary .button-row > *,
+  .session-summary .button-row button {
+    flex: 1;
+    width: 100%;
+  }
+
+  .stats-mastery {
+    justify-content: center;
+  }
+}
+
+/* Archived items (restorable). */
+button.action-restore {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+  color: var(--color-success);
+  background: var(--color-success-soft);
+}
+
+.archived-section {
+  margin-top: 2rem;
+  border-top: 1px solid var(--color-border);
+  padding-top: 0.5rem;
+}
+
+.archived-toggle {
+  width: 100%;
+  text-align: left;
+}
+
+.archived-heading {
+  font-size: 1rem;
+  margin: 1rem 0 0;
+}
+
+.archived-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.archived-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 1px dashed var(--color-border);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+}
+
+.archived-row > div:first-child {
+  min-width: 0;
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+
+.archived-row p {
+  margin: 0.2rem 0 0;
+}
+
+.archived-actions {
+  flex-shrink: 0;
+}
+
+.archived-actions-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.archived-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 260px;
+}
+
+.archived-confirm-message {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-error);
+}
+
+@media (max-width: 600px) {
+  .archived-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .archived-actions,
+  .archived-confirm {
+    max-width: none;
+    width: 100%;
+  }
+
+  .archived-actions-buttons > button {
+    flex: 1 1 0;
+  }
+}
+
+/* Study hint (optional per-card nudge shown before the answer). */
+.study-hint-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+button.hint-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.study-hint {
+  margin: 0;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px dashed var(--color-primary);
+  background: var(--color-primary-soft);
+  font-size: 0.95rem;
+  overflow-wrap: anywhere;
+}
+
+kbd.key-hint {
+  font: inherit;
+  font-size: 0.7rem;
+  padding: 0 0.35rem;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  color: var(--color-muted);
+}
+
+/* On the solid primary button the key cap must read on the button's color. */
+button kbd.key-hint-on-primary {
+  color: inherit;
+  border-color: currentColor;
+  opacity: 0.85;
+  margin-left: 0.5rem;
+}
+
+.study-hint-auto {
+  white-space: pre-wrap;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0.05em;
+}
+
+.study-hint-caption {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+/* The H shortcut only makes sense with a physical keyboard. */
+@media (hover: none) {
+  kbd.key-hint {
+    display: none;
+  }
+}
+
+/* Card list: search, summary and "load more". */
+.search-input {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  padding: 0.6rem 0.75rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.list-summary {
+  margin: 0 0 0.5rem;
+}
+
+.load-more {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.load-more button {
+  min-width: 220px;
+}
+
+@media (max-width: 600px) {
+  .load-more button {
+    width: 100%;
+  }
+}
+
+.rating-note {
+  margin: 0;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+/* Settings page: study configuration select, summary and form. */
+.settings-section {
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.settings-section h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.1rem;
+}
+
+.settings-label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin: 0.75rem 0 0.25rem;
+}
+
+.profile-select {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+/* Replaces the browser's default (often harsh, black) focus ring with a
+   softer one in the brand color, so keyboard focus is still visible. */
+.profile-select:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+.settings-summary {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+
+.settings-summary > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--color-text) 6%, transparent);
+}
+
+.settings-summary dt {
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.settings-summary dd {
+  margin: 0;
+  text-align: right;
+  color: var(--color-muted);
+}
+
+.rating-fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0 0 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.rating-fieldset legend {
+  padding: 0 0.4rem;
+  font-weight: 700;
+}
+
+.rating-fieldset .hint {
+  margin: 0;
+}
+
+.form .checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.form .checkbox-label input {
+  width: auto;
+  padding: 0;
+  border: none;
+}
+
+.profile-daily {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0.5rem 0;
+}
+
+.profile-form input[type="number"],
+.profile-form input[type="text"] {
+  max-width: 200px;
+}
+
+.profile-form #profile-name {
+  max-width: none;
+}
+
+/* The "restore defaults" action sits with the values it resets. */
+.profile-values-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+.profile-values-header .hint {
+  margin: 0;
+}
+
+button.restore-defaults {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding-left: 0;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+/* Save and cancel form one group at the bottom: cancel on the left, the
+   primary action (save) on the right; on phones they share the width. */
+.profile-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.profile-form-actions button {
+  min-width: 140px;
+}
+
+@media (max-width: 600px) {
+  .profile-form-actions button {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}
+
+.success {
+  color: var(--color-success);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* Daily-goal progress shown while studying. */
+.goal-progress {
+  margin: 0.25rem 0 0.75rem;
+}
+
+.goal-progress p {
+  margin: 0 0 0.35rem;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.goal-progress-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--color-border);
+  overflow: hidden;
+}
+
+.goal-progress-fill {
+  height: 100%;
+  background: var(--color-primary);
+  transition: width 0.3s ease;
+}
+
+/* Top bar of the dashboard: log out on the left, settings (icon) on the right. */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.topbar a {
+  display: flex;
+}
+
+button.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* Phones: the study card sits in the vertical middle of the screen and is a
+   little bigger. The back link, card counter and goal progress stay at the
+   top and the "não quero mais ver este cartão" link at the bottom; the card
+   centers itself in the space left between them. The values are easy to tune. */
+@media (max-width: 600px) {
+  .study-shell {
+    box-sizing: border-box;
+    min-height: 100vh; /* fallback for browsers without dvh */
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    padding-left: 0.625rem;
+    padding-right: 0.625rem;
+  }
+
+  .study-shell .study-card {
+    margin-top: auto;
+    margin-bottom: auto;
+    min-height: 40vh; /* fallback for browsers without dvh */
+    min-height: 40dvh;
+    justify-content: center;
+    padding: 1.5rem 1.1rem;
+    gap: 1.25rem;
+  }
+
+  .study-shell .study-question {
+    font-size: 1.35rem;
+  }
+
+  .study-shell .study-answer {
+    font-size: 1.5rem;
+  }
+
+  .study-shell .study-archive {
+    margin-top: 0;
+  }
+}
+
+/* Card contents in the deck's list stay blurred until the user shows them, so
+   browsing the list does not spoil the next card to study. */
+.flashcard-text.is-hidden strong,
+.flashcard-text.is-hidden p {
+  filter: blur(7px);
+  user-select: none;
+  pointer-events: none;
+}
+
+.flashcard-text strong,
+.flashcard-text p {
+  transition: filter 0.15s ease;
+}
+
+.list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.list-header .list-summary {
+  margin: 0;
+}
+
+button.reveal-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.flashcard-row .button-row .reveal-toggle {
+  flex: 0 0 auto;
+  min-width: 44px;
+}
+
+@media (max-width: 600px) {
+  .flashcard-row .button-row .reveal-toggle {
+    flex: 0 0 44px;
+    width: 44px;
+  }
+}
+
+/* Text for screen readers only. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Luma logo: two pre-rendered images (light/dark text baked in), toggled by
+   the OS color scheme the same way every other color in this file is. */
+.brand-logo {
+  display: block;
+  height: auto;
+}
+
+/* Must come after the ".brand-logo { display: block }" rule above: both are
+   single-class selectors of equal specificity, so source order decides which
+   wins, and the dark logo (also carrying .brand-logo) must stay hidden. */
+.brand-logo-dark {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .brand-logo-light {
+    display: none;
+  }
+
+  .brand-logo-dark {
+    display: block;
+  }
+}
+
+.brand-logo-hero {
+  width: 220px;
+  max-width: 60%;
+  margin: 0 auto 1.5rem;
+}
+
+.brand-logo-compact {
+  width: 132px;
+  max-width: 45vw;
+}
