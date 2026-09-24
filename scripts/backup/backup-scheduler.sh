@@ -29,7 +29,7 @@ backup_due() {
 trap 'log "stopping"; exit 0' TERM INT
 
 mkdir -p "$DEST"
-log "started: one backup per day after ${HOUR}h (timezone ${TZ:-UTC}), keeping ${BACKUP_KEEP:-30}"
+log "started: one backup per day after ${HOUR}h (timezone ${TZ:-UTC}), keeping ${BACKUP_KEEP:-1}"
 
 while true; do
   wait_for="$CHECK"

@@ -8,7 +8,7 @@
 set -eu
 
 DEST="${BACKUP_DIR:-/backups}"
-KEEP="${BACKUP_KEEP:-30}"
+KEEP="${BACKUP_KEEP:-1}"
 URI="${MONGODB_URI:-mongodb://mongo:27017}"
 DB="${MONGODB_DATABASE:-flashcard}"
 # mongodump never gives up on an unreachable server by itself (and ignores
