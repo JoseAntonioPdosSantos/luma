@@ -346,6 +346,46 @@ button.secondary {
   max-width: 320px;
 }
 
+/* The card's audio and the user's own take, stacked so they read as a pair. */
+.study-original-audio,
+.voice-recorder,
+.voice-recorder-take {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.study-original-audio .hint,
+.voice-recorder-take .hint,
+.voice-recorder-note {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+button.voice-recorder-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+button.voice-recorder-toggle.recording {
+  background: var(--color-error-soft);
+  color: var(--color-error);
+}
+
+.voice-recorder-elapsed {
+  font-variant-numeric: tabular-nums;
+}
+
+button.voice-recorder-discard {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+}
+
 .rating-buttons {
   display: flex;
   flex-wrap: wrap;
