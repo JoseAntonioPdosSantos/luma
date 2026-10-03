@@ -4,6 +4,8 @@ import { useTranslation } from "react-i18next";
 import { apiUrl } from "../../services/api";
 import { archiveFlashcard } from "../../services/flashcardService";
 import { BulbIcon } from "../../components/Icons";
+import { VoiceRecorderPanel } from "../../components/VoiceRecorderPanel";
+import { useVoiceRecorder } from "../../hooks/useVoiceRecorder";
 import { generateAutoHint } from "../../utils/autoHint";
 import {
   continueStudyingPastGoal,
@@ -114,6 +116,15 @@ export function StudyPage() {
 
   const currentCard = cards[currentIndex];
 
+  // The user's own take on the current card, kept only in memory: keying it
+  // to the card id throws it away as soon as another card comes up.
+  const recorder = useVoiceRecorder(finished ? null : currentCard?.id);
+
+  function toggleRecording() {
+    if (recorder.status === "recording") recorder.stop();
+    else recorder.start();
+  }
+
   // A card's own hint wins; cards without one get an automatic hint
   // (first letter of each word of the answer, the rest as underscores).
   const customHint = currentCard?.hint ?? "";
@@ -196,6 +207,11 @@ export function StudyPage() {
 
     function onKeyDown(e: globalThis.KeyboardEvent) {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key === "r" || e.key === "R") {
+        e.preventDefault();
+        toggleRecording();
+        return;
+      }
       if (!revealed && (e.key === "h" || e.key === "H")) {
         e.preventDefault();
         toggleHint();
@@ -430,6 +446,8 @@ export function StudyPage() {
           </div>
         )}
 
+        {!revealed && <VoiceRecorderPanel recorder={recorder} />}
+
         {!revealed && (
           <button autoFocus onClick={() => setRevealed(true)} aria-keyshortcuts="Space Enter">
             {t("study.showAnswer")}
@@ -452,10 +470,19 @@ export function StudyPage() {
               </div>
             )}
             {currentCard.audio && (
-              <audio controls src={apiUrl(currentCard.audio.url)} className="study-audio">
-                {t("study.audioUnsupported")}
-              </audio>
+              <div className="study-original-audio">
+                <span className="hint">{t("study.originalAudio")}</span>
+                <audio
+                  controls
+                  src={apiUrl(currentCard.audio.url)}
+                  className="study-audio"
+                  aria-label={t("study.originalAudio")}
+                >
+                  {t("study.audioUnsupported")}
+                </audio>
+              </div>
             )}
+            <VoiceRecorderPanel recorder={recorder} />
 
             <p className="hint rating-prompt">{t("study.howWasIt")}</p>
             <div className="rating-buttons">
