@@ -150,9 +150,6 @@ func (s Service) Restore(ctx context.Context, userID, deckID string) error {
 // its flashcards (active and archived), their audio files and the deck's
 // review history. It cannot be undone, so only an already-archived deck is
 // accepted; anything else is reported as not found.
-//
-// The deck document is removed last, so if an earlier step fails the deck
-// is still there (archived) and the deletion can simply be retried.
 func (s Service) DeleteArchived(ctx context.Context, userID, deckID string) error {
 	d, err := s.Get(ctx, userID, deckID)
 	if err != nil {
@@ -161,7 +158,33 @@ func (s Service) DeleteArchived(ctx context.Context, userID, deckID string) erro
 	if !d.IsArchived() {
 		return apperror.NotFound("deck.archivedNotFound", "archived deck not found")
 	}
+	return s.purge(ctx, userID, deckID)
+}
 
+// Delete permanently deletes a deck, active or archived, with everything
+// DeleteArchived removes. It cannot be undone.
+//
+// An active deck is archived first, so if a later step fails the deck is
+// left archived and the deletion can be retried from the archived list.
+func (s Service) Delete(ctx context.Context, userID, deckID string) error {
+	d, err := s.Get(ctx, userID, deckID)
+	if err != nil {
+		return err
+	}
+	if !d.IsArchived() {
+		if err := s.Archive(ctx, userID, deckID); err != nil {
+			return err
+		}
+	}
+	return s.purge(ctx, userID, deckID)
+}
+
+// purge removes an archived deck's review history, flashcards, the deck
+// itself and then the cards' audio files.
+//
+// The deck document is removed last, so if an earlier step fails the deck
+// is still there (archived) and the deletion can simply be retried.
+func (s Service) purge(ctx context.Context, userID, deckID string) error {
 	active, err := s.flashcards.ListByDeck(ctx, userID, deckID)
 	if err != nil {
 		return apperror.Internal(err)

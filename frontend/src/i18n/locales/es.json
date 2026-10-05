@@ -1,5 +1,7 @@
 {
   "common": {
+    "cardsCount_one": "{{count}} tarjeta",
+    "cardsCount_other": "{{count}} tarjetas",
     "cancel": "Cancelar",
     "back": "Volver",
     "loading": "Cargando...",
@@ -74,7 +76,8 @@
     "rename": "Renombrar",
     "delete": "Eliminar",
     "deleteConfirmAria": "Confirmar eliminación",
-    "deleteConfirmMessage": "¿Eliminar el grupo “{{name}}”? Sus colecciones no se eliminarán, solo dejarán de formar parte de un grupo.",
+    "deleteConfirmEmpty": "¿Eliminar el grupo “{{name}}”? No tiene ninguna colección.",
+    "deleteConfirmWithDecks": "¿Seguro que quieres eliminar el grupo “{{name}}”? Tiene {{decks}} y {{cards}}. Todo se eliminará para siempre: las colecciones, las tarjetas, los audios y el historial de estudio.",
     "deletePermanently": "Eliminar grupo",
     "renameError": "No se pudo renombrar el grupo.",
     "deleteError": "No se pudo eliminar el grupo.",
@@ -105,6 +108,9 @@
     "editDeck": "Editar colección",
     "archiveDeck": "Archivar colección",
     "archiveDeckConfirm": "¿Archivar esta colección? Dejará de aparecer en tu panel.",
+    "deleteDeck": "Eliminar colección",
+    "deleteDeckConfirm": "¿Seguro que quieres eliminar la colección “{{name}}”? Tiene {{cards}}. La colección, sus tarjetas, los audios y el historial de estudio se eliminarán para siempre.",
+    "deleteDeckError": "No se pudo eliminar la colección.",
     "archiveCardConfirm": "¿Archivar esta tarjeta?",
     "nameLabel": "Nombre",
     "descriptionLabel": "Descripción",

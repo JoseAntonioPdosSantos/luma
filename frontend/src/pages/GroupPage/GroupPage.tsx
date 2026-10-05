@@ -139,7 +139,15 @@ export function GroupPage() {
               </button>
             ) : (
               <div className="archived-confirm" role="group" aria-label={t("group.deleteConfirmAria")}>
-                <p className="archived-confirm-message">{t("group.deleteConfirmMessage", { name: group.name })}</p>
+                <p className="archived-confirm-message">
+                  {decks.length === 0
+                    ? t("group.deleteConfirmEmpty", { name: group.name })
+                    : t("group.deleteConfirmWithDecks", {
+                        name: group.name,
+                        decks: t("dashboard.groupStats", { count: decks.length }),
+                        cards: t("common.cardsCount", { count: decks.reduce((sum, d) => sum + d.totalCards, 0) }),
+                      })}
+                </p>
                 <div className="archived-actions-buttons">
                   <button className="secondary" onClick={() => setConfirmingDelete(false)} disabled={submitting}>
                     {t("common.cancel")}

@@ -92,11 +92,46 @@ describe("GroupPage", () => {
     expect(await screen.findByRole("heading", { name: "Inglês avançado" })).toBeInTheDocument();
   });
 
-  it("deletes the group after confirming and returns to the dashboard", async () => {
+  it("warns how many collections and cards will be lost, and deletes only after confirming", async () => {
+    const fetchMock = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+      if (url.endsWith("/api/v1/deck-groups/g1?decks=delete") && init?.method === "DELETE") {
+        return Promise.resolve({ ok: true, status: 204, headers: new Headers(), json: async () => undefined });
+      }
+      if (url.includes("/api/v1/deck-groups")) return jsonResponse([{ id: "g1", name: "Inglês" }]);
+      if (url.includes("/api/v1/decks")) {
+        return jsonResponse([
+          { id: "d1", name: "Phrasal verbs", description: "", totalCards: 5, dueCards: 1, groupId: "g1" },
+          { id: "d2", name: "Verbos", description: "", totalCards: 7, dueCards: 0, groupId: "g1" },
+          { id: "d3", name: "Sem grupo", description: "", totalCards: 100, dueCards: 0 },
+        ]);
+      }
+      return jsonResponse({}, false, 404);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    renderGroupPage();
+    await screen.findByRole("heading", { name: "Inglês" });
+
+    await userEvent.click(screen.getByRole("button", { name: "Excluir" }));
+    expect(screen.getByText(/Ele tem 2 coleções e 12 cards\. Tudo será apagado para sempre/)).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalledWith(expect.stringContaining("decks=delete"), expect.anything());
+
+    // Cancelling keeps everything.
+    await userEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+    expect(screen.queryByRole("button", { name: "Excluir grupo" })).not.toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalledWith(expect.stringContaining("decks=delete"), expect.anything());
+
+    await userEvent.click(screen.getByRole("button", { name: "Excluir" }));
+    await userEvent.click(screen.getByRole("button", { name: "Excluir grupo" }));
+
+    expect(await screen.findByText("Dashboard")).toBeInTheDocument();
+  });
+
+  it("asks for confirmation even when the group has no collections", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockImplementation((url: string, init?: RequestInit) => {
-        if (url.endsWith("/api/v1/deck-groups/g1") && init?.method === "DELETE") {
+        if (url.endsWith("/api/v1/deck-groups/g1?decks=delete") && init?.method === "DELETE") {
           return Promise.resolve({ ok: true, status: 204, headers: new Headers(), json: async () => undefined });
         }
         if (url.includes("/api/v1/deck-groups")) return jsonResponse([{ id: "g1", name: "Inglês" }]);
@@ -109,6 +144,7 @@ describe("GroupPage", () => {
     await screen.findByRole("heading", { name: "Inglês" });
 
     await userEvent.click(screen.getByRole("button", { name: "Excluir" }));
+    expect(screen.getByText("Excluir o grupo “Inglês”? Ele não tem nenhuma coleção.")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Excluir grupo" }));
 
     expect(await screen.findByText("Dashboard")).toBeInTheDocument();

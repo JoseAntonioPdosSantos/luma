@@ -1,13 +1,13 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { archiveDeck, getDeck, updateDeck } from "../../services/deckService";
+import { archiveDeck, deleteDeck, getDeck, updateDeck } from "../../services/deckService";
 import { archiveFlashcard, deleteArchivedFlashcard, restoreFlashcard } from "../../services/flashcardService";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { usePagedFlashcards } from "../../hooks/usePagedFlashcards";
 import { useApiErrorMessage } from "../../i18n/useApiErrorMessage";
 import { ArchivedActions } from "../../components/ArchivedActions";
-import { ArchiveIcon, ChevronIcon, EyeIcon, EyeOffIcon, PencilIcon } from "../../components/Icons";
+import { ArchiveIcon, ChevronIcon, EyeIcon, EyeOffIcon, PencilIcon, TrashIcon } from "../../components/Icons";
 import { getDeckStats } from "../../services/statsService";
 import { DECK_BADGE_STYLE, initialsFor } from "../../utils/deckBadge";
 import type { Deck, DeckStats } from "../../types";
@@ -33,6 +33,8 @@ export function DeckPage() {
   const [description, setDescription] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // Question and answer of the cards in the list are hidden until the user
   // asks for them, so the next card to study is not spoiled by browsing the
@@ -109,6 +111,19 @@ export function DeckPage() {
     if (!confirm(t("deck.archiveDeckConfirm"))) return;
     await archiveDeck(deckId);
     navigate("/dashboard");
+  }
+
+  async function handleDeleteDeck() {
+    if (!deckId) return;
+    setDeleteError(null);
+    setSubmitting(true);
+    try {
+      await deleteDeck(deckId);
+      navigate("/dashboard");
+    } catch (err) {
+      setDeleteError(apiErrorMessage(err, "deck.deleteDeckError"));
+      setSubmitting(false);
+    }
   }
 
   async function handleArchiveCard(id: string) {
@@ -265,7 +280,32 @@ export function DeckPage() {
                     <ArchiveIcon />
                     {t("deck.archiveDeck")}
                   </button>
+                  {!confirmingDelete && (
+                    <button className="secondary action-archive" onClick={() => setConfirmingDelete(true)}>
+                      <TrashIcon />
+                      {t("deck.deleteDeck")}
+                    </button>
+                  )}
                 </div>
+                {confirmingDelete && (
+                  <div className="archived-confirm" role="group" aria-label={t("archivedActions.confirmAria")}>
+                    <p className="archived-confirm-message">
+                      {t("deck.deleteDeckConfirm", {
+                        name: deck.name,
+                        cards: t("common.cardsCount", { count: deck.totalCards }),
+                      })}
+                    </p>
+                    <div className="archived-actions-buttons">
+                      <button className="secondary" onClick={() => setConfirmingDelete(false)} disabled={submitting}>
+                        {t("common.cancel")}
+                      </button>
+                      <button className="danger" onClick={handleDeleteDeck} disabled={submitting}>
+                        {t("archivedActions.deletePermanently")}
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {deleteError && <p className="error" role="alert">{deleteError}</p>}
               </>
             )}
           </div>

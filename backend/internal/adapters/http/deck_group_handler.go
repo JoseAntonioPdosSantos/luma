@@ -92,11 +92,16 @@ func (h DeckGroupHandlers) Update(w http.ResponseWriter, r *http.Request) {
 }
 
 // Delete handles DELETE /api/v1/deck-groups/{groupID}. The decks that were
-// filed under it are not deleted; they lose their group.
+// filed under it are not deleted; they lose their group. With
+// ?decks=delete they are permanently deleted along with the group.
 func (h DeckGroupHandlers) Delete(w http.ResponseWriter, r *http.Request) {
 	userID, _ := userIDFromContext(r.Context())
 
-	if err := h.groups.Delete(r.Context(), userID, r.PathValue("groupID")); err != nil {
+	remove := h.groups.Delete
+	if r.URL.Query().Get("decks") == "delete" {
+		remove = h.groups.DeleteWithDecks
+	}
+	if err := remove(r.Context(), userID, r.PathValue("groupID")); err != nil {
 		writeError(w, r, err)
 		return
 	}

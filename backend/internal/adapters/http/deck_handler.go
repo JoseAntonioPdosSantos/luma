@@ -208,12 +208,17 @@ func (h DeckHandlers) Stats(w http.ResponseWriter, r *http.Request) {
 // Archive handles DELETE /api/v1/decks/{deckID}. It archives the deck
 // rather than permanently deleting it, preserving its flashcards and
 // review history (spec section 6: "Archived decks should not appear in
-// the default dashboard").
+// the default dashboard"). With ?permanent=true it instead deletes the
+// deck for good, along with its flashcards and review history.
 func (h DeckHandlers) Archive(w http.ResponseWriter, r *http.Request) {
 	userID, _ := userIDFromContext(r.Context())
 	deckID := r.PathValue("deckID")
 
-	if err := h.decks.Archive(r.Context(), userID, deckID); err != nil {
+	remove := h.decks.Archive
+	if r.URL.Query().Get("permanent") == "true" {
+		remove = h.decks.Delete
+	}
+	if err := remove(r.Context(), userID, deckID); err != nil {
 		writeError(w, r, err)
 		return
 	}
