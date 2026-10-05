@@ -1,6 +1,7 @@
 // Package deckgroupservice implements deck-group business rules: creating,
-// renaming and deleting the folders a user organizes decks into, and
-// filing a deck under one (or removing it from its group).
+// renaming and deleting the folders a user organizes decks into (alone or
+// together with their decks), and filing a deck under one (or removing it
+// from its group).
 package deckgroupservice
 
 import (
@@ -14,14 +15,21 @@ import (
 	"flashcard-backend/internal/ports/repositories"
 )
 
-type Service struct {
-	groups repositories.DeckGroupRepository
-	decks  repositories.DeckRepository
-	clock  clock.Clock
+// DeckDeleter permanently deletes one deck with its flashcards, audio and
+// review history (deckservice.Service does).
+type DeckDeleter interface {
+	Delete(ctx context.Context, userID, deckID string) error
 }
 
-func New(groups repositories.DeckGroupRepository, decks repositories.DeckRepository, c clock.Clock) Service {
-	return Service{groups: groups, decks: decks, clock: c}
+type Service struct {
+	groups  repositories.DeckGroupRepository
+	decks   repositories.DeckRepository
+	deleter DeckDeleter
+	clock   clock.Clock
+}
+
+func New(groups repositories.DeckGroupRepository, decks repositories.DeckRepository, deleter DeckDeleter, c clock.Clock) Service {
+	return Service{groups: groups, decks: decks, deleter: deleter, clock: c}
 }
 
 // List returns the user's groups, oldest first.
@@ -102,6 +110,36 @@ func (s Service) Delete(ctx context.Context, userID, id string) error {
 		return apperror.Internal(err)
 	}
 	return nil
+}
+
+// DeleteWithDecks removes a group and permanently deletes every active
+// deck filed under it, with their flashcards, audio and review history.
+// It cannot be undone. Archived decks of the group are left in the
+// archive, without a group.
+//
+// The decks go first and the group last, so if a deck fails to delete the
+// group is still there with what is left and the deletion can be retried.
+func (s Service) DeleteWithDecks(ctx context.Context, userID, id string) error {
+	if _, err := s.groups.FindByID(ctx, userID, id); err != nil {
+		if errors.Is(err, repositories.ErrNotFound) {
+			return apperror.NotFound("deckGroup.notFound", "group not found")
+		}
+		return apperror.Internal(err)
+	}
+
+	decks, err := s.decks.ListActive(ctx, userID)
+	if err != nil {
+		return apperror.Internal(err)
+	}
+	for _, d := range decks {
+		if d.GroupID != id {
+			continue
+		}
+		if err := s.deleter.Delete(ctx, userID, d.ID); err != nil {
+			return err
+		}
+	}
+	return s.Delete(ctx, userID, id)
 }
 
 // SetDeckGroup files a deck under groupID, or removes it from its group

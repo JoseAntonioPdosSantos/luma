@@ -13,6 +13,8 @@ export function renameDeckGroup(id: string, name: string): Promise<DeckGroup> {
   return api.put<DeckGroup>(`/api/v1/deck-groups/${id}`, { name });
 }
 
+// Permanently deletes a group together with every collection filed under
+// it (their flashcards, audio and study history). Cannot be undone.
 export function deleteDeckGroup(id: string): Promise<void> {
-  return api.delete<void>(`/api/v1/deck-groups/${id}`);
+  return api.delete<void>(`/api/v1/deck-groups/${id}?decks=delete`);
 }

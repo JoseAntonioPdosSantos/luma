@@ -125,8 +125,14 @@ func (f *fakeDeckRepository) ClearGroup(_ context.Context, userID, groupID strin
 func (f *fakeDeckRepository) Create(context.Context, deck.Deck) (deck.Deck, error) {
 	panic("not implemented")
 }
-func (f *fakeDeckRepository) ListActive(context.Context, string) ([]deck.Deck, error) {
-	panic("not implemented")
+func (f *fakeDeckRepository) ListActive(_ context.Context, userID string) ([]deck.Deck, error) {
+	out := []deck.Deck{}
+	for _, d := range f.decks {
+		if d.UserID == userID && !d.IsArchived() {
+			out = append(out, d)
+		}
+	}
+	return out, nil
 }
 func (f *fakeDeckRepository) ListArchived(context.Context, string) ([]deck.Deck, error) {
 	panic("not implemented")
@@ -156,11 +162,26 @@ func (f *fakeDeckRepository) DeleteArchived(context.Context, string, string) err
 	panic("not implemented")
 }
 
+// fakeDeckDeleter removes decks from a fakeDeckRepository, standing in for
+// deckservice.Service.Delete.
+type fakeDeckDeleter struct {
+	decks  *fakeDeckRepository
+	failOn string
+}
+
+func (f fakeDeckDeleter) Delete(_ context.Context, _, deckID string) error {
+	if deckID == f.failOn {
+		return apperror.Internal(errors.New("boom"))
+	}
+	delete(f.decks.decks, deckID)
+	return nil
+}
+
 // ---------- tests ----------
 
 func TestCreate_ValidatesRejectsDuplicatesAndEnforcesTheLimit(t *testing.T) {
 	groups := &fakeGroupRepository{}
-	svc := New(groups, newFakeDeckRepository(), clock.Fixed{Time: fixedNow})
+	svc := New(groups, newFakeDeckRepository(), fakeDeckDeleter{}, clock.Fixed{Time: fixedNow})
 
 	created, err := svc.Create(context.Background(), "u1", "  Inglês  ")
 	if err != nil || created.Name != "Inglês" || created.UserID != "u1" {
@@ -192,7 +213,7 @@ func TestCreate_ValidatesRejectsDuplicatesAndEnforcesTheLimit(t *testing.T) {
 
 func TestRename_ValidatesOwnershipAndDuplicates(t *testing.T) {
 	groups := &fakeGroupRepository{}
-	svc := New(groups, newFakeDeckRepository(), clock.Fixed{Time: fixedNow})
+	svc := New(groups, newFakeDeckRepository(), fakeDeckDeleter{}, clock.Fixed{Time: fixedNow})
 
 	a, _ := svc.Create(context.Background(), "u1", "A")
 	b, _ := svc.Create(context.Background(), "u1", "B")
@@ -221,7 +242,7 @@ func TestDelete_UngroupsItsDecksWithoutDeletingThem(t *testing.T) {
 		deck.Deck{ID: "d1", UserID: "u1"},
 		deck.Deck{ID: "d2", UserID: "u1"},
 	)
-	svc := New(groups, decks, clock.Fixed{Time: fixedNow})
+	svc := New(groups, decks, fakeDeckDeleter{decks: decks}, clock.Fixed{Time: fixedNow})
 
 	created, _ := svc.Create(context.Background(), "u1", "Inglês")
 	if err := svc.SetDeckGroup(context.Background(), "u1", "d1", created.ID); err != nil {
@@ -243,13 +264,70 @@ func TestDelete_UngroupsItsDecksWithoutDeletingThem(t *testing.T) {
 	}
 }
 
+func TestDeleteWithDecks_DeletesOnlyTheGroupsOwnDecks(t *testing.T) {
+	groups := &fakeGroupRepository{}
+	decks := newFakeDeckRepository(
+		deck.Deck{ID: "d1", UserID: "u1"},
+		deck.Deck{ID: "d2", UserID: "u1"},
+		deck.Deck{ID: "d3", UserID: "u1"},
+	)
+	svc := New(groups, decks, fakeDeckDeleter{decks: decks}, clock.Fixed{Time: fixedNow})
+
+	doomed, _ := svc.Create(context.Background(), "u1", "Inglês")
+	other, _ := svc.Create(context.Background(), "u1", "Francês")
+	_ = svc.SetDeckGroup(context.Background(), "u1", "d1", doomed.ID)
+	_ = svc.SetDeckGroup(context.Background(), "u1", "d2", other.ID)
+
+	if err := svc.DeleteWithDecks(context.Background(), "u1", doomed.ID); err != nil {
+		t.Fatalf("DeleteWithDecks() error: %v", err)
+	}
+	if _, ok := decks.decks["d1"]; ok {
+		t.Error("deck d1 was in the deleted group and should be gone")
+	}
+	if d, ok := decks.decks["d2"]; !ok || d.GroupID != other.ID {
+		t.Errorf("deck d2 belongs to another group and must be untouched, got %+v (exists=%v)", d, ok)
+	}
+	if _, ok := decks.decks["d3"]; !ok {
+		t.Error("deck d3 has no group and must survive")
+	}
+	if list, _ := svc.List(context.Background(), "u1"); len(list) != 1 || list[0].ID != other.ID {
+		t.Errorf("List() after delete = %+v, want only the other group", list)
+	}
+
+	if err := svc.DeleteWithDecks(context.Background(), "u1", "missing"); !isNotFound(err) {
+		t.Errorf("deleting a missing group = %v, want not found", err)
+	}
+	if err := svc.DeleteWithDecks(context.Background(), "someone-else", other.ID); !isNotFound(err) {
+		t.Errorf("deleting another user's group = %v, want not found", err)
+	}
+	if _, ok := decks.decks["d2"]; !ok {
+		t.Error("another user's attempt must not delete deck d2")
+	}
+}
+
+func TestDeleteWithDecks_KeepsTheGroupWhenADeckFailsToDelete(t *testing.T) {
+	groups := &fakeGroupRepository{}
+	decks := newFakeDeckRepository(deck.Deck{ID: "d1", UserID: "u1"})
+	svc := New(groups, decks, fakeDeckDeleter{decks: decks, failOn: "d1"}, clock.Fixed{Time: fixedNow})
+
+	created, _ := svc.Create(context.Background(), "u1", "Inglês")
+	_ = svc.SetDeckGroup(context.Background(), "u1", "d1", created.ID)
+
+	if err := svc.DeleteWithDecks(context.Background(), "u1", created.ID); err == nil {
+		t.Fatal("DeleteWithDecks() should report the failed deck deletion")
+	}
+	if list, _ := svc.List(context.Background(), "u1"); len(list) != 1 {
+		t.Errorf("List() = %+v, want the group kept so the deletion can be retried", list)
+	}
+}
+
 func TestSetDeckGroup_ValidatesDeckAndGroupOwnership(t *testing.T) {
 	groups := &fakeGroupRepository{}
 	decks := newFakeDeckRepository(
 		deck.Deck{ID: "d1", UserID: "u1"},
 		deck.Deck{ID: "d-stranger", UserID: "u2"},
 	)
-	svc := New(groups, decks, clock.Fixed{Time: fixedNow})
+	svc := New(groups, decks, fakeDeckDeleter{decks: decks}, clock.Fixed{Time: fixedNow})
 	created, _ := svc.Create(context.Background(), "u1", "Inglês")
 
 	if err := svc.SetDeckGroup(context.Background(), "u1", "d1", created.ID); err != nil {

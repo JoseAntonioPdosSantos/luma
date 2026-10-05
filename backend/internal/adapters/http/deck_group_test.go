@@ -77,6 +77,42 @@ func TestDeckGroups_CreateRenameAndDelete(t *testing.T) {
 	}
 }
 
+func TestDeckGroups_DeleteWithDecksRemovesItsDecksAndCardsForGood(t *testing.T) {
+	router, cookie := mongoTestRouter(t)
+
+	var group deckGroupResponse
+	mustDecode(t, doJSON(t, router, http.MethodPost, "/api/v1/deck-groups", cookie, deckGroupRequest{Name: "Inglês"}), &group)
+
+	var inside, outside deckResponse
+	mustDecode(t, doJSON(t, router, http.MethodPost, "/api/v1/decks", cookie, deckRequest{Name: "Phrasal verbs"}), &inside)
+	mustDecode(t, doJSON(t, router, http.MethodPost, "/api/v1/decks", cookie, deckRequest{Name: "Français"}), &outside)
+	doJSON(t, router, http.MethodPut, "/api/v1/decks/"+inside.ID+"/group", cookie, map[string]any{"groupId": group.ID})
+	var card flashcardResponse
+	mustDecode(t, doJSON(t, router, http.MethodPost, "/api/v1/decks/"+inside.ID+"/flashcards", cookie,
+		flashcardRequest{Question: "Q", Answer: "A"}), &card)
+
+	if rec := doJSON(t, router, http.MethodDelete, "/api/v1/deck-groups/"+group.ID+"?decks=delete", cookie, nil); rec.Code != http.StatusNoContent {
+		t.Fatalf("delete status = %d, want %d, body=%s", rec.Code, http.StatusNoContent, rec.Body.String())
+	}
+
+	if list := listDeckGroups(t, router, cookie); len(list) != 0 {
+		t.Errorf("groups after delete = %+v, want none", list)
+	}
+	if rec := doJSON(t, router, http.MethodGet, "/api/v1/decks/"+inside.ID, cookie, nil); rec.Code != http.StatusNotFound {
+		t.Errorf("deck of the deleted group status = %d, want %d", rec.Code, http.StatusNotFound)
+	}
+	if rec := doJSON(t, router, http.MethodGet, "/api/v1/flashcards/"+card.ID, cookie, nil); rec.Code != http.StatusNotFound {
+		t.Errorf("card of the deleted group status = %d, want %d", rec.Code, http.StatusNotFound)
+	}
+	if rec := doJSON(t, router, http.MethodGet, "/api/v1/decks/"+outside.ID, cookie, nil); rec.Code != http.StatusOK {
+		t.Errorf("deck outside the group status = %d, want %d", rec.Code, http.StatusOK)
+	}
+
+	if rec := doJSON(t, router, http.MethodDelete, "/api/v1/deck-groups/"+group.ID+"?decks=delete", cookie, nil); rec.Code != http.StatusNotFound {
+		t.Errorf("deleting a missing group status = %d, want %d", rec.Code, http.StatusNotFound)
+	}
+}
+
 func TestDeckGroups_RejectsEmptyAndDuplicateNames(t *testing.T) {
 	router, cookie := mongoTestRouter(t)
 

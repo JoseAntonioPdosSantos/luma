@@ -1,5 +1,7 @@
 {
   "common": {
+    "cardsCount_one": "{{count}} card",
+    "cardsCount_other": "{{count}} cards",
     "cancel": "Cancelar",
     "back": "Voltar",
     "loading": "Carregando...",
@@ -74,7 +76,8 @@
     "rename": "Renomear",
     "delete": "Excluir",
     "deleteConfirmAria": "Confirmar exclusão",
-    "deleteConfirmMessage": "Excluir o grupo “{{name}}”? As coleções dele não serão apagadas, apenas deixarão de fazer parte de um grupo.",
+    "deleteConfirmEmpty": "Excluir o grupo “{{name}}”? Ele não tem nenhuma coleção.",
+    "deleteConfirmWithDecks": "Tem certeza de que quer excluir o grupo “{{name}}”? Ele tem {{decks}} e {{cards}}. Tudo será apagado para sempre: as coleções, os cards, os áudios e o histórico de estudo.",
     "deletePermanently": "Excluir grupo",
     "renameError": "Não foi possível renomear o grupo.",
     "deleteError": "Não foi possível excluir o grupo.",
@@ -105,6 +108,9 @@
     "editDeck": "Editar coleção",
     "archiveDeck": "Arquivar coleção",
     "archiveDeckConfirm": "Arquivar esta coleção? Ela deixará de aparecer no seu painel.",
+    "deleteDeck": "Excluir coleção",
+    "deleteDeckConfirm": "Tem certeza de que quer excluir a coleção “{{name}}”? Ela tem {{cards}}. A coleção, os cards, os áudios e o histórico de estudo serão apagados para sempre.",
+    "deleteDeckError": "Não foi possível excluir a coleção.",
     "archiveCardConfirm": "Arquivar este flashcard?",
     "nameLabel": "Nome",
     "descriptionLabel": "Descrição",
