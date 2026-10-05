@@ -279,6 +279,12 @@ endpoint, not in the `GET /api/v1/decks` list.
 flashcards and their review history are preserved, and the deck stops
 appearing in `GET /api/v1/decks`. Returns `204 No Content`.
 
+`DELETE /api/v1/decks/{deckID}?permanent=true` instead **permanently**
+deletes the deck in one step, whether it is active or archived, together
+with all of its flashcards, their audio files and the deck's review
+history. It cannot be undone. Returns `204 No Content`, or `404 NOT_FOUND`
+if the deck does not exist or belongs to another user.
+
 `GET /api/v1/decks?archived=true` lists the caller's **archived** decks
 (most recently archived first) with the same shape and card counts as the
 active list.
@@ -358,6 +364,14 @@ does **not** delete or archive the decks that were filed under it — they
 simply lose their group and appear on their own on the dashboard again.
 Returns `204 No Content`, or `404 NOT_FOUND` (key `deckGroup.notFound`) for
 an unknown group or one belonging to another user.
+
+`DELETE /api/v1/deck-groups/{groupID}?decks=delete` deletes the group
+**and permanently deletes every active deck filed under it**, with their
+flashcards, audio files and review history (the same as
+`DELETE /api/v1/decks/{deckID}?permanent=true` for each one). It cannot be
+undone. Archived decks of the group stay in the archive, without a group.
+The decks are deleted first and the group last, so if a deck fails to
+delete the group is still there and the request can be retried.
 
 `PUT /api/v1/decks/{deckID}/group` with `{ "groupId": "<id>" }` files a
 deck under one of the user's groups; an empty or `null` `groupId` removes

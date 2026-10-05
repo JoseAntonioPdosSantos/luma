@@ -145,6 +145,44 @@ describe("DeckPage", () => {
     await userEvent.click(screen.getByRole("button", { name: "Configurações da coleção" }));
     expect(screen.queryByRole("button", { name: "Editar coleção" })).not.toBeInTheDocument();
   });
+  it("permanently deletes the collection only after confirming, telling how many cards it has", async () => {
+    const deck = { id: "d1", name: "Inglês", description: "", totalCards: 233, dueCards: 5 };
+    const fetchMock = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+      if (url.endsWith("/api/v1/decks/d1?permanent=true") && init?.method === "DELETE") {
+        return Promise.resolve({ ok: true, status: 204, headers: new Headers(), json: async () => undefined });
+      }
+      if (url.includes("/api/v1/decks/d1/flashcards")) return jsonResponse({ items: [], total: 0 });
+      if (url.endsWith("/api/v1/decks/d1")) return jsonResponse(deck);
+      return jsonResponse({});
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(
+      <MemoryRouter initialEntries={["/decks/d1"]}>
+        <Routes>
+          <Route path="/decks/:deckId" element={<DeckPage />} />
+          <Route path="/dashboard" element={<p>Dashboard</p>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await userEvent.click(await screen.findByRole("button", { name: "Configurações da coleção" }));
+    await userEvent.click(screen.getByRole("button", { name: "Excluir coleção" }));
+
+    expect(screen.getByText(/excluir a coleção “Inglês”\? Ela tem 233 cards\./)).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalledWith(expect.stringContaining("permanent=true"), expect.anything());
+
+    // Cancelling keeps the collection.
+    await userEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+    expect(screen.queryByRole("button", { name: "Excluir definitivamente" })).not.toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalledWith(expect.stringContaining("permanent=true"), expect.anything());
+
+    await userEvent.click(screen.getByRole("button", { name: "Excluir coleção" }));
+    await userEvent.click(screen.getByRole("button", { name: "Excluir definitivamente" }));
+
+    expect(await screen.findByText("Dashboard")).toBeInTheDocument();
+  });
+
   describe("search and pagination", () => {
     const makeCards = (n: number) =>
       Array.from({ length: n }, (_, i) => ({
