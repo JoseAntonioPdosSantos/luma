@@ -506,6 +506,43 @@ func TestDeleteArchived_RefusesActiveDeck(t *testing.T) {
 	}
 }
 
+func TestDelete_RemovesAnActiveDeckWithItsCardsHistoryAndAudio(t *testing.T) {
+	decks := newFakeDeckRepository()
+	cards := &deletionFlashcardRepository{
+		active: []flashcard.Flashcard{{ID: "c1", Audio: &flashcard.Audio{GridFSFileID: "audio-1"}}},
+	}
+	events := &deletionReviewRepository{}
+	audio := &recordingAudioStore{}
+	svc := New(decks, cards, events, audio, clock.Fixed{Time: fixedNow})
+
+	created, _ := svc.Create(context.Background(), "user-1", "English", "")
+
+	if err := svc.Delete(context.Background(), "user-1", created.ID); err != nil {
+		t.Fatalf("Delete() error: %v", err)
+	}
+	if _, err := svc.Get(context.Background(), "user-1", created.ID); err == nil {
+		t.Error("deck should be gone after Delete()")
+	}
+	if cards.deletedAllOf != created.ID || events.deletedDeck != created.ID {
+		t.Errorf("cards deleted for %q, events deleted for %q; want both %q", cards.deletedAllOf, events.deletedDeck, created.ID)
+	}
+	if len(audio.deleted) != 1 {
+		t.Errorf("deleted audio files = %v, want audio-1", audio.deleted)
+	}
+}
+
+func TestDelete_WrongOwnerIsNotFoundAndKeepsTheDeck(t *testing.T) {
+	svc, _ := newTestService()
+	created, _ := svc.Create(context.Background(), "user-1", "English", "")
+
+	if err := svc.Delete(context.Background(), "someone-else", created.ID); err == nil {
+		t.Fatal("Delete() should return an error for a deck owned by someone else")
+	}
+	if d, err := svc.Get(context.Background(), "user-1", created.ID); err != nil || d.IsArchived() {
+		t.Errorf("the owner's deck must stay active, got archived=%v err=%v", d.IsArchived(), err)
+	}
+}
+
 func TestDeleteArchived_WrongOwnerIsNotFound(t *testing.T) {
 	svc, _ := newTestService()
 	created, _ := svc.Create(context.Background(), "user-1", "English", "")

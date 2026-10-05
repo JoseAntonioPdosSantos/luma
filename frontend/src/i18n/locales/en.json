@@ -1,5 +1,7 @@
 {
   "common": {
+    "cardsCount_one": "{{count}} card",
+    "cardsCount_other": "{{count}} cards",
     "cancel": "Cancel",
     "back": "Back",
     "loading": "Loading...",
@@ -74,7 +76,8 @@
     "rename": "Rename",
     "delete": "Delete",
     "deleteConfirmAria": "Confirm deletion",
-    "deleteConfirmMessage": "Delete the “{{name}}” group? Its collections won't be deleted, they'll just stop being part of a group.",
+    "deleteConfirmEmpty": "Delete the “{{name}}” group? It has no collections.",
+    "deleteConfirmWithDecks": "Are you sure you want to delete the “{{name}}” group? It has {{decks}} and {{cards}}. Everything will be deleted forever: the collections, the cards, the audio and the study history.",
     "deletePermanently": "Delete group",
     "renameError": "Couldn't rename the group.",
     "deleteError": "Couldn't delete the group.",
@@ -105,6 +108,9 @@
     "editDeck": "Edit collection",
     "archiveDeck": "Archive collection",
     "archiveDeckConfirm": "Archive this collection? It will no longer appear on your dashboard.",
+    "deleteDeck": "Delete collection",
+    "deleteDeckConfirm": "Are you sure you want to delete the “{{name}}” collection? It has {{cards}}. The collection, its cards, the audio and the study history will be deleted forever.",
+    "deleteDeckError": "Couldn't delete the collection.",
     "archiveCardConfirm": "Archive this flashcard?",
     "nameLabel": "Name",
     "descriptionLabel": "Description",

@@ -78,12 +78,13 @@ func mongoTestRouter(t *testing.T) (router http.Handler, userCookie *http.Cookie
 	sessions := authtoken.NewHMACManager("test-secret", time.Hour)
 
 	profileSvc := profileservice.New(mongoadapter.NewStudyProfileRepository(db), userRepo, deckRepo, fixedClock)
+	deckSvc := deckservice.New(deckRepo, flashcardRepo, reviewRepo, audioStore, fixedClock)
 
 	deps := Dependencies{
 		Users:      userservice.New(userRepo, fixedClock),
 		Profiles:   profileSvc,
-		Decks:      deckservice.New(deckRepo, flashcardRepo, reviewRepo, audioStore, fixedClock),
-		DeckGroups: deckgroupservice.New(mongoadapter.NewDeckGroupRepository(db), deckRepo, fixedClock),
+		Decks:      deckSvc,
+		DeckGroups: deckgroupservice.New(mongoadapter.NewDeckGroupRepository(db), deckRepo, deckSvc, fixedClock),
 		Flashcards: flashcardservice.New(flashcardRepo, deckRepo, audioStore, testMaxAudioSizeBytes, fixedClock),
 		Study:      studyservice.New(flashcardRepo, userRepo, profileSvc, deckRepo, reviewRepo, fixedClock),
 		Sessions:   sessions,
@@ -433,6 +434,33 @@ func TestPermanentDelete_OnlyArchivedItems(t *testing.T) {
 	}
 	if rec := doJSON(t, router, http.MethodGet, "/api/v1/flashcards/"+second.ID, cookie, nil); rec.Code != http.StatusNotFound {
 		t.Errorf("card of a deleted deck status = %d, want %d", rec.Code, http.StatusNotFound)
+	}
+}
+
+func TestPermanentDelete_ActiveDeckInOneStep(t *testing.T) {
+	router, cookie := mongoTestRouter(t)
+
+	var d deckResponse
+	mustDecode(t, doJSON(t, router, http.MethodPost, "/api/v1/decks", cookie, deckRequest{Name: "English"}), &d)
+	var card flashcardResponse
+	mustDecode(t, doJSON(t, router, http.MethodPost, "/api/v1/decks/"+d.ID+"/flashcards", cookie,
+		flashcardRequest{Question: "Q", Answer: "A"}), &card)
+
+	if rec := doJSON(t, router, http.MethodDelete, "/api/v1/decks/"+d.ID+"?permanent=true", cookie, nil); rec.Code != http.StatusNoContent {
+		t.Fatalf("permanent delete status = %d, want %d, body=%s", rec.Code, http.StatusNoContent, rec.Body.String())
+	}
+	if rec := doJSON(t, router, http.MethodGet, "/api/v1/decks/"+d.ID, cookie, nil); rec.Code != http.StatusNotFound {
+		t.Errorf("deleted deck status = %d, want %d", rec.Code, http.StatusNotFound)
+	}
+	if rec := doJSON(t, router, http.MethodGet, "/api/v1/flashcards/"+card.ID, cookie, nil); rec.Code != http.StatusNotFound {
+		t.Errorf("card of a deleted deck status = %d, want %d", rec.Code, http.StatusNotFound)
+	}
+
+	// It must not merely have been archived.
+	var archived []deckResponse
+	mustDecode(t, doJSON(t, router, http.MethodGet, "/api/v1/decks?archived=true", cookie, nil), &archived)
+	if len(archived) != 0 {
+		t.Errorf("archived decks = %+v, want none", archived)
 	}
 }
 

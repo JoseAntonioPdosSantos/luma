@@ -36,6 +36,12 @@ export function archiveDeck(id: string): Promise<void> {
   return api.delete<void>(`/api/v1/decks/${id}`);
 }
 
+// Permanently deletes an active deck with its flashcards, audio and study
+// history, in one step. Cannot be undone.
+export function deleteDeck(id: string): Promise<void> {
+  return api.delete<void>(`/api/v1/decks/${id}?permanent=true`);
+}
+
 // Permanently deletes an already-archived deck with its flashcards. Cannot
 // be undone.
 export function deleteArchivedDeck(id: string): Promise<void> {

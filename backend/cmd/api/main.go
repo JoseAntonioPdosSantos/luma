@@ -68,11 +68,12 @@ func run() error {
 	studyProfileRepo := mongoadapter.NewStudyProfileRepository(db)
 	deckGroupRepo := mongoadapter.NewDeckGroupRepository(db)
 	profileSvc := profileservice.New(studyProfileRepo, userRepo, deckRepo, realClock)
+	deckSvc := deckservice.New(deckRepo, flashcardRepo, reviewRepo, audioStore, realClock)
 	deps := httpapi.Dependencies{
 		Users:      userservice.New(userRepo, realClock),
 		Profiles:   profileSvc,
-		Decks:      deckservice.New(deckRepo, flashcardRepo, reviewRepo, audioStore, realClock),
-		DeckGroups: deckgroupservice.New(deckGroupRepo, deckRepo, realClock),
+		Decks:      deckSvc,
+		DeckGroups: deckgroupservice.New(deckGroupRepo, deckRepo, deckSvc, realClock),
 		Flashcards: flashcardservice.New(flashcardRepo, deckRepo, audioStore, cfg.MaxAudioSizeBytes, realClock),
 		Study:      studyservice.New(flashcardRepo, userRepo, profileSvc, deckRepo, reviewRepo, realClock),
 		Sessions:   authtoken.NewHMACManager(cfg.SessionSecret, 0),
